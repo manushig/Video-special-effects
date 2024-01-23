@@ -1,0 +1,49 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.8.34408.163
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Project1_Manushi", "Project1_Manushi\Project1_Manushi.vcxproj", "{CEC98553-B040-4F83-945D-E43453A5A06B}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
+		Gaussian|x64 = Gaussian|x64
+		Gaussian|x86 = Gaussian|x86
+		ImgDisplay|x64 = ImgDisplay|x64
+		ImgDisplay|x86 = ImgDisplay|x86
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
+		VidDisplay|x64 = VidDisplay|x64
+		VidDisplay|x86 = VidDisplay|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{CEC98553-B040-4F83-945D-E43453A5A06B}.Debug|x64.ActiveCfg = Debug|x64
+		{CEC98553-B040-4F83-945D-E43453A5A06B}.Debug|x64.Build.0 = Debug|x64
+		{CEC98553-B040-4F83-945D-E43453A5A06B}.Debug|x86.ActiveCfg = Debug|Win32
+		{CEC98553-B040-4F83-945D-E43453A5A06B}.Debug|x86.Build.0 = Debug|Win32
+		{CEC98553-B040-4F83-945D-E43453A5A06B}.Gaussian|x64.ActiveCfg = Gaussian|x64
+		{CEC98553-B040-4F83-945D-E43453A5A06B}.Gaussian|x64.Build.0 = Gaussian|x64
+		{CEC98553-B040-4F83-945D-E43453A5A06B}.Gaussian|x86.ActiveCfg = Gaussian|Win32
+		{CEC98553-B040-4F83-945D-E43453A5A06B}.Gaussian|x86.Build.0 = Gaussian|Win32
+		{CEC98553-B040-4F83-945D-E43453A5A06B}.ImgDisplay|x64.ActiveCfg = ImgDisplay|x64
+		{CEC98553-B040-4F83-945D-E43453A5A06B}.ImgDisplay|x64.Build.0 = ImgDisplay|x64
+		{CEC98553-B040-4F83-945D-E43453A5A06B}.ImgDisplay|x86.ActiveCfg = ImgDisplay|Win32
+		{CEC98553-B040-4F83-945D-E43453A5A06B}.ImgDisplay|x86.Build.0 = ImgDisplay|Win32
+		{CEC98553-B040-4F83-945D-E43453A5A06B}.Release|x64.ActiveCfg = Release|x64
+		{CEC98553-B040-4F83-945D-E43453A5A06B}.Release|x64.Build.0 = Release|x64
+		{CEC98553-B040-4F83-945D-E43453A5A06B}.Release|x86.ActiveCfg = Release|Win32
+		{CEC98553-B040-4F83-945D-E43453A5A06B}.Release|x86.Build.0 = Release|Win32
+		{CEC98553-B040-4F83-945D-E43453A5A06B}.VidDisplay|x64.ActiveCfg = VidDisplay|x64
+		{CEC98553-B040-4F83-945D-E43453A5A06B}.VidDisplay|x64.Build.0 = VidDisplay|x64
+		{CEC98553-B040-4F83-945D-E43453A5A06B}.VidDisplay|x86.ActiveCfg = VidDisplay|Win32
+		{CEC98553-B040-4F83-945D-E43453A5A06B}.VidDisplay|x86.Build.0 = VidDisplay|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {CEE536D3-4B03-4403-BFE5-49D43859FE0B}
+	EndGlobalSection
+EndGlobal

@@ -219,3 +219,17 @@ void adjustContrast(cv::Mat& src, cv::Mat& dst, double contrast);
  * @param dst The destination image after applying the cartoon effect.
  */
 void cartoonify(cv::Mat& src, cv::Mat& dst);
+
+
+/**
+ * @brief Swaps two faces in an image, retaining the rest of the image.
+ *
+ * This function interchanges two faces in an image. It resizes the faces to fit each other's
+ * locations and then swaps them, while keeping the rest of the image unchanged.
+ *
+ * @param src The source image (color image).
+ * @param dst The destination image with swapped faces.
+ * @param faces A vector of rectangles representing detected faces.
+ * @return int Returns 0 on success, -1 if there are less than two faces.
+ */
+int swapFaces(cv::Mat& src, cv::Mat& dst, std::vector<cv::Rect>& faces);

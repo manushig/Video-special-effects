@@ -350,7 +350,7 @@ int sobelY3x3(Mat& src, Mat& dst) {
  */
 int magnitude(cv::Mat& sx, cv::Mat& sy, cv::Mat& dst) {
 
-    if (sx.empty() || sy.empty() || sx.type() != CV_8UC3 || sy.type() != CV_8UC3 || sx.size != sy.size || sx.type() != sy.type() /*|| dst.type() != CV_16SC3*/) {
+    if (sx.empty() || sy.empty() || sx.type() != CV_16SC3 || sy.type() != CV_16SC3 || sx.size != sy.size || sx.type() != sy.type() /* || dst.type() != CV_8UC3 */ ) {
         return -1; // Return error if source image is empty or not a 3-channel image
     }
 
@@ -361,20 +361,35 @@ int magnitude(cv::Mat& sx, cv::Mat& sy, cv::Mat& dst) {
 
     // Compute gradient magnitude
     for (int i = 0; i < sx.rows; i++) {
+        Vec3b* pDstRow = dst.ptr<Vec3b>(i);
+
         for (int j = 0; j < sx.cols; j++) {
             double sum_magnitude = 0.0;
             for (int k = 0; k < sx.channels(); k++) {
                 // Compute gradient magnitude for each channel using pointer access
-                short val_x = sx.ptr<cv::Vec3b>(i)[j][k];
-                short val_y = sy.ptr<cv::Vec3b>(i)[j][k];
+                short val_x = sx.ptr<cv::Vec3s>(i)[j][k];
+                short val_y = sy.ptr<cv::Vec3s>(i)[j][k];
                 sum_magnitude += sqrt(val_x * val_x + val_y * val_y);
+                //dst.ptr<Vec3b>(i)[j][k] = saturate_cast<uchar>(std::min(float(sum_magnitude), 255.0f));
+                ///dst.ptr<Vec3b>(i)[j][k] = saturate_cast<uchar>(std::min(sum_magnitude, 255.0f));
+                //dst.ptr<Vec3b>(i)[j][k] = saturate_cast<uchar>(sum_magnitude);
+                pDstRow[j][k] = saturate_cast<uchar>(std::min(float(sum_magnitude), 255.0f));
+                // Assign the magnitude to the destination pixel
+                //pDstRow[j][k] = saturate_cast<short>(sum_magnitude);
+                //dst.ptr<Vec3b>(i)[j][k] = saturate_cast<uchar>(std::min(float(sum_magnitude), 255.0f));
+                //dst.ptr<Vec3b>(i)[j][k] = std::min(float(sum_magnitude), 255.0f);
             }
 
             // Average the magnitudes from all channels
-            float avg_magnitude = (float)(sum_magnitude / sx.channels());
+            //float avg_magnitude = (float)(sum_magnitude / sx.channels());
 
             // Scaling and converting to uchar
-            dst.ptr<uchar>(i)[j] = static_cast<uchar>(std::min(avg_magnitude, 255.0f));
+            //dst.ptr<uchar>(i)[j] = saturate_cast<uchar>(std::min(avg_magnitude, 255.0f));
+            //dst.ptr<uchar>(i)[j] = saturate_cast<uchar>(sum_magnitude);
+            //dst.ptr<uchar>(i)[j] = saturate_cast<uchar>(std::min(float(sum_magnitude), 255.0f));
+            //dst.ptr<Vec3b>(i)[j] = saturate_cast<uchar>(std::min(avg_magnitude, 255.0f));
+            //dst.ptr<uchar>(i)[j] = saturate_cast<uchar>(std::min(avg_magnitude, 255.0f));
+            //pDstRow[j] = saturate_cast<uchar>(std::min(float(avg_magnitude), 255.0f));
         }
     }
 
@@ -752,4 +767,79 @@ void cartoonify(cv::Mat& src, cv::Mat& dst) {
             }
         }
     }
+}
+
+
+/**
+ * @brief Swaps two faces in an image, retaining the rest of the image.
+ *
+ * This function interchanges two faces in an image. It resizes the faces to fit each other's
+ * locations and then swaps them, while keeping the rest of the image unchanged.
+ *
+ * @param src The source image (color image).
+ * @param dst The destination image with swapped faces.
+ * @param faces A vector of rectangles representing detected faces.
+ * @return int Returns 0 on success, -1 if there are less than two faces.
+ */
+int swapFaces(cv::Mat& src, cv::Mat& dst, std::vector<cv::Rect>& faces) {
+    // Check if there are at least two faces
+    if (faces.size() < 2) {
+        return -1;
+    }
+
+    // Clone the source image to the destination
+    dst = src.clone();
+
+    // Only swap the first two faces for simplicity
+    const cv::Rect& face1 = faces[0];
+    const cv::Rect& face2 = faces[1];
+
+
+    // Temporary matrices to hold resized face regions
+    cv::Mat face1Resized, face2Resized;
+    cv::resize(src(face1), face1Resized, cv::Size(face2.width, face2.height));
+    cv::resize(src(face2), face2Resized, cv::Size(face1.width, face1.height));
+
+    // Create masks for each face
+    cv::Mat mask1 = cv::Mat::zeros(face1.height, face1.width, CV_8UC1);
+    mask1.setTo(cv::Scalar(255));
+    cv::Mat mask2 = cv::Mat::zeros(face2.height, face2.width, CV_8UC1);
+    mask2.setTo(cv::Scalar(255));
+
+    // Swap the resized face regions
+    face1Resized.copyTo(dst(cv::Rect(face2.x, face2.y, face1Resized.cols, face1Resized.rows)), mask2);
+    face2Resized.copyTo(dst(cv::Rect(face1.x, face1.y, face2Resized.cols, face2Resized.rows)), mask1);
+
+#if 0
+    // Temporary matrices to hold face regions
+    cv::Mat face1Region = src(face1).clone();
+    cv::Mat face2Region = src(face2).clone();
+
+    /*imshow("Video Capture 2 ", face1Region);
+    imshow("Video Capture 3", face2Region);*/
+
+    // Swap face regions using the ptr method
+    for (int y = 0; y < face1.height; ++y) {
+        cv::Vec3b* ptrDstFace1 = dst.ptr<cv::Vec3b>(face1.y + y);
+        cv::Vec3b* ptrSrcFace2 = face2Region.ptr<cv::Vec3b>(y);
+
+        for (int x = 0; x < face1.width; ++x) {
+            ptrDstFace1[face1.x + x] = ptrSrcFace2[x];
+        }
+    }
+
+    imshow("Video Capture 2 ", dst);
+    
+    //for (int y = 0; y < face2.height; ++y) {
+    //    cv::Vec3b* ptrDstFace2 = dst.ptr<cv::Vec3b>(face2.y + y);
+    //    cv::Vec3b* ptrSrcFace1 = face1Region.ptr<cv::Vec3b>(y);
+
+    //    for (int x = 0; x < face2.width; ++x) {
+    //        ptrDstFace2[face2.x + x] = ptrSrcFace1[x];
+    //    }
+    //}
+
+#endif
+
+    return 0;
 }

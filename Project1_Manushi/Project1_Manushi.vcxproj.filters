@@ -33,6 +33,9 @@
     <ClCompile Include="faceDetect\showFaces.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="fourier.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="filter.hpp">
@@ -46,5 +49,8 @@
     <Xml Include="faceDetect\haarcascade_frontalface_alt2.xml">
       <Filter>Source Files</Filter>
     </Xml>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include=".gitignore" />
   </ItemGroup>
 </Project>

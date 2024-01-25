@@ -118,6 +118,7 @@ int main(int argc, char* argv[]) {
     Mat grad_x;
     Mat grad_y;
     Mat SobelMagnitude;
+    Mat grad_Magnitude;
     bool showmagnitude = false;
     Mat blurredQuantizedImage;
     bool showquantizing = false;
@@ -144,6 +145,8 @@ int main(int argc, char* argv[]) {
     Mat ChangeContrastFrame;
     bool showCartooning = false;
     Mat CartooningFrame;
+    bool showswapfaces = false;
+    Mat swapFacesFrame;
 
     // Set the mouse callback function to capture scroll events
     cv::setMouseCallback("Video Capture", onMouse, nullptr);
@@ -194,16 +197,21 @@ int main(int argc, char* argv[]) {
             imshow("Video Capture", grad_y);
         }
         else if (showmagnitude) {
-            SobelX.create(frame.size(), CV_8UC3);
+            SobelX.create(frame.size(), CV_16SC3);
             sobelX3x3(frame, SobelX);
-            
-            SobelY.create(frame.size(), CV_8UC3);
-            sobelY3x3(frame, SobelY);
-            
+            //convertScaleAbs(SobelX, grad_x);
 
-            SobelMagnitude.create(frame.size(), CV_8UC1);
+            SobelY.create(frame.size(), CV_16SC3);
+            sobelY3x3(frame, SobelY);
+            //convertScaleAbs(SobelY, grad_y);
+
+            SobelMagnitude.create(frame.size(), CV_8UC3);
+            //magnitude(grad_x, grad_y, SobelMagnitude);
             magnitude(SobelX, SobelY, SobelMagnitude);
-            imshow("Video Capture", SobelMagnitude);
+
+            convertScaleAbs(SobelMagnitude, grad_Magnitude);
+            imshow("Video Capture", grad_Magnitude);
+            //imshow("Video Capture", SobelMagnitude);
         }
         else if (showquantizing) {
 
@@ -252,15 +260,16 @@ int main(int argc, char* argv[]) {
             cv::imshow("Video Capture", frameWithSharpFaces);
         }
         else if (showembossing) {
-            SobelX.create(frame.size(), CV_8UC3);
+            SobelX.create(frame.size(), CV_16SC3);
             sobelX3x3(frame, SobelX);
+            convertScaleAbs(SobelX, grad_x);
 
-            SobelY.create(frame.size(), CV_8UC3);
+            SobelY.create(frame.size(), CV_16SC3);
             sobelY3x3(frame, SobelY);
-
+            convertScaleAbs(SobelY, grad_y);
 
             embossing.create(frame.size(), CV_8UC3);
-            createEmbossEffect(SobelX, SobelY, embossing);
+            createEmbossEffect(grad_x, grad_y, embossing);
             imshow("Video Capture", embossing);
         }
         else if (showcolorFace) {
@@ -309,6 +318,17 @@ int main(int argc, char* argv[]) {
             cartoonify(frame, CartooningFrame);
             imshow("Video Capture", CartooningFrame);
         }
+        else if (showswapfaces) {
+            // convert the image to greyscale
+            cvtColor(frame, grey, cv::COLOR_BGR2GRAY, 0);
+
+            // detect faces
+            detectFaces(grey, faces);
+
+            //swapFacesFrame.create(frame.size(), CV_8UC3);
+            swapFaces(frame, swapFacesFrame, faces);
+            imshow("Video Capture", swapFacesFrame);
+        }
         else if (showGray) {
             /*
             This function converts an image from one color space to another. In this case, you'll convert the captured frame from BGR to greyscale.
@@ -349,6 +369,7 @@ int main(int argc, char* argv[]) {
             showChangeContrast = false;
             showChangeBrightness = false;
             showCartooning = false;
+            showswapfaces = false;
             break;
         }
         case 'h':    // alternative gray custom version
@@ -371,6 +392,7 @@ int main(int argc, char* argv[]) {
             showChangeContrast = false;
             showChangeBrightness = false;
             showCartooning = false;
+            showswapfaces = false;
             break;
         }
         case 'p':    // sepia filter applied
@@ -393,6 +415,7 @@ int main(int argc, char* argv[]) {
             showChangeContrast = false;
             showChangeBrightness = false;
             showCartooning = false;
+            showswapfaces = false;
             break;
         }
         case 'b':    // go into blurr mode
@@ -415,6 +438,7 @@ int main(int argc, char* argv[]) {
             showChangeContrast = false;
             showChangeBrightness = false;
             showCartooning = false;
+            showswapfaces = false;
             break;
         }
         case 'x':    // go into sobelX mode
@@ -437,6 +461,7 @@ int main(int argc, char* argv[]) {
             showChangeContrast = false;
             showChangeBrightness = false;
             showCartooning = false;
+            showswapfaces = false;
             break;
         }
         case 'y':    // go into sobelY mode
@@ -459,6 +484,7 @@ int main(int argc, char* argv[]) {
             showChangeContrast = false;
             showChangeBrightness = false;
             showCartooning = false;
+            showswapfaces = false;
             break;
         }
         case 'm':    // go into sobel magnitude mode
@@ -481,6 +507,7 @@ int main(int argc, char* argv[]) {
             showChangeContrast = false;
             showChangeBrightness = false;
             showCartooning = false;
+            showswapfaces = false;
             break;
         }
         case 'i':    // go into blurr and quantizing mode
@@ -503,6 +530,7 @@ int main(int argc, char* argv[]) {
             showChangeContrast = false;
             showChangeBrightness = false;
             showCartooning = false;
+            showswapfaces = false;
             break;
         }
         case 'f':    // go into face detect mode
@@ -525,6 +553,7 @@ int main(int argc, char* argv[]) {
             showChangeContrast = false;
             showChangeBrightness = false;
             showCartooning = false;
+            showswapfaces = false;
             break;
         }
         case 'r':    // go to blurr face around the rectangle mode
@@ -547,6 +576,7 @@ int main(int argc, char* argv[]) {
             showChangeContrast = false;
             showChangeBrightness = false;
             showCartooning = false;
+            showswapfaces = false;
             break;
         }
         case 't':    // go to embossing mode
@@ -569,6 +599,7 @@ int main(int argc, char* argv[]) {
             showChangeContrast = false;
             showChangeBrightness = false;
             showCartooning = false;
+            showswapfaces = false;
             break;
         }
         case 'c':    // go to color face mode
@@ -591,6 +622,7 @@ int main(int argc, char* argv[]) {
             showChangeContrast = false;
             showChangeBrightness = false;
             showCartooning = false;
+            showswapfaces = false;
             break;
         }
         case 'u':    // go to halo effect mode
@@ -613,6 +645,7 @@ int main(int argc, char* argv[]) {
             showChangeContrast = false;
             showChangeBrightness = false;
             showCartooning = false;
+            showswapfaces = false;
             break;
         }
         //case 'o':    // go to median filtering mode based on different kernel size
@@ -656,6 +689,7 @@ int main(int argc, char* argv[]) {
             showChangeContrast = false;
             showChangeBrightness = false;
             showCartooning = false;
+            showswapfaces = false;
             break;
         }
         case 'd':    // go to change brightness mode
@@ -678,6 +712,7 @@ int main(int argc, char* argv[]) {
             showRetainCertainColor = false;
             showChangeContrast = false;
             showCartooning = false;
+            showswapfaces = false;
             break;
         }
         case 'e':    // go to change contrast mode
@@ -700,6 +735,7 @@ int main(int argc, char* argv[]) {
             showRetainCertainColor = false;
             showChangeBrightness = false;
             showCartooning = false;
+            showswapfaces = false;
             break;
         }
         case 'j':    // go to cartooning mode
@@ -722,6 +758,30 @@ int main(int argc, char* argv[]) {
             showRetainCertainColor = false;
             showChangeBrightness = false;
             showChangeContrast = false;
+            showswapfaces = false;
+            break;
+        }
+        case 'k':    // go to swap faces mode
+        {
+            showswapfaces = !showswapfaces;
+            showalternateGray = false;
+            showsepia = false;
+            showGray = false;
+            showblurr = false;
+            showsobelX = false;
+            showsobelY = false;
+            showmagnitude = false;
+            showquantizing = false;
+            showfaces = false;
+            showblurrfaces = false;
+            showembossing = false;
+            showcolorFace = false;
+            showHalo = false;
+            //showMedianFilter = false;
+            showRetainCertainColor = false;
+            showChangeBrightness = false;
+            showChangeContrast = false;
+            showCartooning = false;
             break;
         }
         case 's':     // save the screen capture
@@ -799,6 +859,10 @@ int main(int argc, char* argv[]) {
             else if (showCartooning) {
                 filename = "saved_frame_cartooning_" + timestamp + ".jpg";
                 imwrite(filename, CartooningFrame);
+            }
+            else if (showswapfaces) {
+                filename = "saved_frame_swapFaces_" + timestamp + ".jpg";
+                imwrite(filename, swapFacesFrame);
             }
             else {
                 filename = "saved_frame_color_" + timestamp + ".jpg";

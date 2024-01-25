@@ -315,6 +315,11 @@
     <ClCompile Include="filter.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ImgDisplay|x64'">false</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="fourier.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Gaussian|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ImgDisplay|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='VidDisplay|x64'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="Guassian.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ImgDisplay|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='VidDisplay|x64'">true</ExcludedFromBuild>
@@ -341,6 +346,9 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ImgDisplay|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Gaussian|x64'">true</ExcludedFromBuild>
     </Xml>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include=".gitignore" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

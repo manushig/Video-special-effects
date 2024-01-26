@@ -1,8 +1,15 @@
 /*! \file filter.hpp
-    \brief Image Manipulation Functions.
+    \brief Comprehensive Image Manipulation and Enhancement Functions.
     \author Manushi
+    \date January 24, 2024
 
-    This file contains functions for image manipulation, including custom grayscale conversion.
+    This file encapsulates a variety of image manipulation and enhancement functions
+    compatible with OpenCV. It includes custom grayscale conversions, sepia tone filtering
+    with vignetting, Gaussian blurring, Sobel edge detection, gradient magnitude calculation,
+    blur and quantize effects, embossing effects, color face preservation, halo effects,
+    median filtering, color preservation, brightness and contrast adjustments, cartoonification,
+    and face swapping. These functions extend the capabilities of standard OpenCV operations,
+    providing more versatile and creative image processing tools.
 */
 
 #include <opencv2/opencv.hpp>
@@ -25,6 +32,16 @@ using namespace std;
 int greyscale(Mat& src, Mat& dst);
 
 /*!
+ *  \brief Apply a sepia tone filter to an image.
+ *  \param src The source color image (input).
+ *  \param dst The destination sepia-toned image (output).
+ *  \return int Returns 0 on successful execution, -1 if source image is empty.
+ *
+ *  This function applies a sepia tone filter to the source image.
+ */
+int sepia(Mat& src, Mat& dst);
+
+/*!
  *  \brief Apply a sepia tone filter with vignetting to an image.
  *  \param src The source color image (input).
  *  \param dst The destination sepia-toned image (output).
@@ -33,9 +50,7 @@ int greyscale(Mat& src, Mat& dst);
  *  This function applies a sepia tone filter to the source image with vignetting effect.
  *  Vignetting makes the image get darker towards the edges.
  */
-int sepia(Mat& src, Mat& dst);
-
-
+int sepiawithvignett(Mat& src, Mat& dst);
 
 /*!
  *  \brief Apply a guassian filter 5x5.

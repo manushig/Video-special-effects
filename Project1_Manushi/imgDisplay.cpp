@@ -1,11 +1,13 @@
-
 /*! \file imgDisplay.cpp
     \brief Display an image from a file.
     \author Manushi
+    \date January 24, 2024
 
     This program reads an image from a specified file path and displays it in a window.
     The program enters a loop, waiting for the user to press 'q' to quit the program.
-    The window is destroyed upon exiting.
+    Additional functionality includes applying sepia, Sobel X, Sobel Y, and median filtering
+    to the image and displaying them in separate windows.
+    The windows are destroyed upon exiting.
 */
 
 #include <opencv2/opencv.hpp>
@@ -24,9 +26,10 @@ using namespace std;
  *  \return int Returns 0 on successful execution, -1 on failure.
  *
  *  The main function checks if an image file path is provided as an argument.
- *  It then reads the image, displays it in a window, performs sepia filtering on image and siaplys in new window and waits for the user to press 'q' to exit. 
- * 
+ *  It then reads the image, displays it in a window, and applies various filters.
+ *  The program waits for the user to press 'q' to exit.
  */
+
 int main(int argc, char* argv[]) {
     // Check if the image file name is provided
     if (argc != 2) {
@@ -42,40 +45,35 @@ int main(int argc, char* argv[]) {
     }
 
     Mat sepiaFil;
+    Mat sobelY;
+    Mat sobelX;
+    Mat MedianFilterFrame;
 
-    // Create a window for display
-    namedWindow("Display window", WINDOW_AUTOSIZE);
-    imshow("Display window", image);
-
+    // Apply sepia filter
     sepia(image, sepiaFil);
     namedWindow("Sepia", WINDOW_AUTOSIZE);
     imshow("Sepia", sepiaFil);
 
-    Mat sobelY; // (image.rows, image.cols, CV_16SC1);
-    sobelY.create(image.size(), CV_8UC3);
-
-    sobelY3x3(image, sobelY);
-    namedWindow("sobel y", WINDOW_AUTOSIZE);
-    imshow("sobel y", sobelY);
-
-    Mat sobelX; // (image.rows, image.cols, CV_16SC1);
+    // Apply Sobel X filter
     sobelX.create(image.size(), CV_8UC3);
-
     sobelX3x3(image, sobelX);
-    namedWindow("sobel x", WINDOW_AUTOSIZE);
-    imshow("sobel x", sobelX);
+    namedWindow("Sobel X", WINDOW_AUTOSIZE);
+    imshow("Sobel X", sobelX);
 
-    Mat MedianFilterFrame;
+    // Apply Sobel Y filter
+    sobelY.create(image.size(), CV_8UC3);
+    sobelY3x3(image, sobelY);
+    namedWindow("Sobel Y", WINDOW_AUTOSIZE);
+    imshow("Sobel Y", sobelY);
+
+    // Apply Median Filter
     medianFilterPtrColor(image, MedianFilterFrame, 3);
+    namedWindow("Median Filtering", WINDOW_AUTOSIZE);
     imshow("Median Filtering", MedianFilterFrame);
 
-    //Mat blurr_gauss;
-    //cv::GaussianBlur(image, blurr_gauss, cv::Size(5, 5), 0);
-    //imshow("GaussianBlur", blurr_gauss);
-
-    //Mat blurr_gauss_own;
-    //blur5x5_2(image, blurr_gauss_own);
-    //imshow("blur5x5_2", blurr_gauss_own);
+    // Display original image
+    namedWindow("Display window", WINDOW_AUTOSIZE);
+    imshow("Display window", image);
 
     // Wait for a keystroke in the window
     cout << "Press 'q' to exit" << endl;

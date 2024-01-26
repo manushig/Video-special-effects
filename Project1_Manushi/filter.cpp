@@ -1,9 +1,18 @@
-/*! \file filter.cpp
-    \brief Image Manipulation Functions.
-    \author Manushi
-
-    This file contains functions for image manipulation, including custom grayscale conversion.
-*/
+/*!
+ *  \file filter.cpp
+ *  \brief Image Manipulation Functions
+ *  \author Manushi
+ *  \date January 24, 2024
+ *
+ *  This file contains the implementation of various image manipulation functions.
+ *  These functions include custom grayscale conversion, sepia tone application,
+ *  Gaussian blur, Sobel filters (X and Y), gradient magnitude calculation,
+ *  emboss effect creation, and other image processing techniques.
+ *  The functions are designed to modify and enhance images using OpenCV's
+ *  powerful image processing capabilities. This implementation serves as a
+ *  utility for various image manipulation tasks and is part of a larger project
+ *  that focuses on advanced image processing techniques.
+ */
 
 #include <opencv2/opencv.hpp>
 
@@ -57,13 +66,12 @@ int greyscale(Mat& src, Mat& dst) {
 
 
 /*!
- *  \brief Apply a sepia tone filter with vignetting to an image.
+ *  \brief Apply a sepia tone filter.
  *  \param src The source color image (input).
  *  \param dst The destination sepia-toned image (output).
  *  \return int Returns 0 on successful execution, -1 if source image is empty.
  *
- *  This function applies a sepia tone filter to the source image with vignetting effect.
- *  Vignetting makes the image get darker towards the edges.
+ *  This function applies a sepia tone filter to the source image.
  */
 int sepia(Mat& src, Mat& dst) {
     if (src.empty()) {
@@ -111,6 +119,69 @@ int sepia(Mat& src, Mat& dst) {
             double sepiaGreen = (0.349 * red) + (0.686 * green) + (0.168 * blue);
             double sepiaBlue = (0.272 * red) + (0.534 * green) + (0.131 * blue);
 
+            // normalize and Update pixel values in the new Mat
+            pDstRow[j] = Vec3b(saturate_cast<uchar>(sepiaBlue), saturate_cast<uchar>(sepiaGreen), saturate_cast<uchar>(sepiaRed));
+        }
+    }
+
+    return 0;
+}
+
+/*!
+ *  \brief Apply a sepia tone filter with vignetting to an image.
+ *  \param src The source color image (input).
+ *  \param dst The destination sepia-toned image (output).
+ *  \return int Returns 0 on successful execution, -1 if source image is empty.
+ *
+ *  This function applies a sepia tone filter to the source image with vignetting effect.
+ *  Vignetting makes the image get darker towards the edges.
+ */
+int sepiawithvignett(Mat& src, Mat& dst) {
+    if (src.empty()) {
+        return -1;
+    }
+
+    src.copyTo(dst);  // makes a copy of the original image
+
+    // need to get the center of the image
+    Point center(src.cols / 2, src.rows / 2);
+
+    /*
+      We use euclian distance to get the distance from the center of the image to the one of its corners
+
+      center.x is half the width of the image, and center.y is half the height.
+      Squaring the distances is part of calculating the Euclidean distance
+      The square root of the sum of the squared distances, calculates the Euclidean distance from the center of the image to one of its corners
+    */
+    double maxDist = sqrt(center.x * center.x + center.y * center.y);
+
+
+    for (int i = 0; i < src.rows; ++i) {
+        // Get pointer to the i-th row of src
+        Vec3b* pSrcRow = src.ptr<Vec3b>(i);
+
+        // Get the pointer to the start of the ith row of output image
+        Vec3b* pDstRow = dst.ptr<Vec3b>(i);
+
+        for (int j = 0; j < src.cols; ++j) {
+
+            // Save the current BGR values
+            int blue = pSrcRow[j][0];
+            int green = pSrcRow[j][1];
+            int red = pSrcRow[j][2];
+
+            /*
+                Apply the column wise co - efficients to the red, green, blue
+
+                 0.393, 0.349, 0.272,    // Red coefficients
+                 0.769, 0.686, 0.534,    // Green coefficients
+                 0.189, 0.168, 0.131     // Blue coefficients
+            */
+
+            double sepiaRed = (0.393 * red) + (0.769 * green) + (0.189 * blue);
+            double sepiaGreen = (0.349 * red) + (0.686 * green) + (0.168 * blue);
+            double sepiaBlue = (0.272 * red) + (0.534 * green) + (0.131 * blue);
+
             //Apply vignetting effect to the image
             // Using distance formula get how far is the pixel from the centre of the image
             double dist = sqrt((center.x - j) * (center.x - j) + (center.y - i) * (center.y - i));
@@ -128,7 +199,6 @@ int sepia(Mat& src, Mat& dst) {
 
     return 0;
 }
-
 
 /*!
  *  \brief Apply a guassian filter 5x5.
@@ -156,15 +226,6 @@ int blur5x5_1(cv::Mat& src, cv::Mat& dst) {
     // create the dst iamge
     src.copyTo(dst);  // makes a copy of the original image
 
-    //std::vector<std::vector<int>> kernel = { {1, 2, 4, 2, 1},
-    //                                        {2, 4, 8, 4, 2},
-    //                                        {4, 8, 16, 8, 4},
-    //                                        {2, 4, 8, 4, 2},
-    //                                        {1, 2, 4, 2, 1} };
-
-    // only going to calcualte values for pixels where filter fits in the image
-    // nested loop
-
     for (int i = 2; i < src.rows - 2; i++) {  // rows 
         for (int j = 2; j < src.cols - 2; j++) {   // cols
             for (int k = 0; k < src.channels(); k++) {   // color channels
@@ -182,20 +243,6 @@ int blur5x5_1(cv::Mat& src, cv::Mat& dst) {
                 dst.at<Vec3b>(i, j)[k] = sum;
 
             }
-
-            //Vec3b blurPixel(0,0,0);
-            //for (int bi = -2; bi <= 2; bi++) {   // color channels
-            //    for (int bj = -2; bj <= 2; bj++) {   // color channels
-
-            //        for (int k = 0; k < src.channels(); k++) {   // color channels
-            //            Vec3b pixel = src.at<Vec3b>(i + bi, j + bj);
-            //            blurPixel[k] += pixel[k] * kernel[bi + 2][bj + 2];;   // at particular pixel keep adding the red, blue, red values from around pixels and save it in blurPixel
-            //        }
-            //    }
-            //}
-            //// If we add up all the values in the filter, the resulted sum is 100, we divide the calculated
-            //// since we have added all the channels for all 5x5 of image add that to the dst image
-            //dst.at<Vec3b>(i, j) = Vec3b(blurPixel[0]/100, blurPixel[1]/100, blurPixel[2]/100);
         }
     }
 
@@ -208,12 +255,12 @@ int blur5x5_1(cv::Mat& src, cv::Mat& dst) {
  *  \param dst The destination blurred image (output).
  *  \return int Returns 0 on successful execution, -1 if source image is empty or not a 3-channel image.
  *
- *  This function applies a 1x5 blur filter to the source image using separable matrix for improved performance.
- *  The blur is achieved by first applying a horizontal 1x5 matrix, followed by a vertical 5x1 matrix.
- *  This method avoids using the slower 'at' method for pixel access, instead using pointer access for efficiency.
+ *  \This function applies a 1x5 blur filter to the source image using separable matrix for improved performance.
+ *  \The blur is achieved by first applying a horizontal 1x5 matrix, followed by a vertical 5x1 matrix.
+ *  \This method avoids using the slower 'at' method for pixel access, instead using pointer access for efficiency.
  * 
- * Guassian 1x5 separable Filter 
-   [1 2 4 2 1]
+ * \Guassian 1x5 separable Filter 
+   \[1 2 4 2 1]
  */
 int blur5x5_2(cv::Mat& src, cv::Mat& dst) {
     if (src.empty() || src.type() != CV_8UC3) {
@@ -744,7 +791,7 @@ void cartoonify(cv::Mat& src, cv::Mat& dst) {
     cv::Mat edgeMask;
     cv::adaptiveThreshold(grayScaleImage, edgeMask, 255,
         cv::ADAPTIVE_THRESH_MEAN_C,
-        cv::THRESH_BINARY, 9, 9);
+        cv::THRESH_BINARY, 9, 2); // Adjusted blockSize and C value for less aggressive edge detection
 
     // Applying bilateral filter to reduce noise and keep the edge sharp as required
     cv::Mat colorImage;
@@ -753,21 +800,27 @@ void cartoonify(cv::Mat& src, cv::Mat& dst) {
     // Preparing the dst image container with the same size and type as src
     dst.create(src.size(), src.type());
 
+    // Set a background color for areas without edges
+    Vec3b backgroundColor(240, 240, 240); // Light gray as an example
+
     // Iterate over each pixel in the image using the ptr method for pointer access
     for (int y = 0; y < src.rows; ++y) {
         cv::Vec3b* ptrColorImage = colorImage.ptr<cv::Vec3b>(y);
-        cv::Vec3b* ptrEdgeMask = edgeMask.ptr<cv::Vec3b>(y);
+        uchar* ptrEdgeMask = edgeMask.ptr<uchar>(y); // Edge mask should be single channel
         cv::Vec3b* ptrDst = dst.ptr<cv::Vec3b>(y);
 
         for (int x = 0; x < src.cols; ++x) {
             // Masking the color image with the edge mask to produce the cartoon effect
-            uchar maskValue = ptrEdgeMask[x][0]; // Assuming single channel for edge mask
+            uchar maskValue = ptrEdgeMask[x]; // Edge mask is a single channel
             for (int c = 0; c < 3; c++) { // Iterate over each color channel
-                ptrDst[x][c] = maskValue == 255 ? ptrColorImage[x][c] : 0;
+                // If maskValue is 255 (edge), use background color, else keep the color image
+                ptrDst[x][c] = maskValue == 255 ? backgroundColor[c] : ptrColorImage[x][c];
+                //ptrDst[x][c] = maskValue == 255 ? ptrColorImage[x][c]: backgroundColor[c];
             }
         }
     }
 }
+
 
 
 /**

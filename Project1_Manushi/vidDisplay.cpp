@@ -1,15 +1,34 @@
 /*! \file vidDisplay.cpp
-    \brief Live Video Display from Camera with Grayscale Option.
+    \brief Advanced Video Display and Processing from Camera.
     \author Manushi
+    \date January 24, 2024
 
-    This program opens a video channel, captures and displays each frame. 
-    Pressing 'g' toggles grayscale display mode on/off. 
-    Pressing 'q' quits the program. 
-    Pressing 's' saves the current frame with a timestamp.
-    Pressing 'h' toggles alternative gray display mode on/off
-    Pressing 'p' toggles sepia filter display mode on/off
-    Pressing 'b' toggles blurr filter display mode on/off
+    This program opens a video channel to capture and display live video from a camera.
+    It includes multiple functionalities, each toggled by specific keypresses:
+    - 'g': Toggles grayscale display mode on/off.
+    - 'h': Toggles alternative grayscale display mode on/off.
+    - 'p': Toggles sepia filter display mode on/off.
+    - 'v': Toggles sepia filter with vignett display mode on/off.
+    - 'b': Toggles blur filter using seperable matrix, display mode on/off.
+    - 'z': Toggles blur filter using guassian filter, display mode on/off.
+    - 'x' and 'y': Toggle Sobel filter in X and Y directions respectively.
+    - 'm': Toggles gradient magnitude mode (Sobel) on/off.
+    - 'i': Toggles blur and quantize mode on/off.
+    - 'f': Toggles face detection mode on/off.
+    - 'r': Toggles blurred faces mode on/off.
+    - 't': Toggles embossing effect mode on/off.
+    - 'c': Toggles color face mode on/off.
+    - 'u': Toggles halo effect mode on/off.
+    - 'a': Toggles retain certain color mode on/off.
+    - 'd': Toggles brightness change mode on/off.
+    - 'e': Toggles contrast change mode on/off.
+    - 'j': Toggles cartooning mode on/off.
+    - 'k': Toggles swap faces mode on/off.
+    - 's': Saves the current frame with a timestamp.
+    - 'q': Quits the program.
 
+    These functionalities allow for a wide range of video processing and display options,
+    making the program versatile for various image processing demonstrations.
 */
 
 #include <opencv2/opencv.hpp>
@@ -18,7 +37,7 @@
 #include <iomanip>
 #include <sstream>
 #include <conio.h>
-#include <direct.h> // For _getcwd on Windows
+#include <direct.h>
 
 #include "filter.hpp" 
 #include "faceDetect/faceDetect.h"
@@ -27,10 +46,10 @@ using namespace cv;
 using namespace std;
 
 /*!
- *  \brief Get current timestamp as a string.
- *  \return string A string representing the current date and time in the format YYYYMMDD_HHMMSS.
+ * \brief Fetches the current system time and formats it into a string.
+ * \return A string representing the current date and time in the format YYYYMMDD_HHMMSS.
  *
- *  This function fetches the current system time and formats it into a string that can be used in filenames.
+ * This function is useful for creating timestamped filenames.
  */
 string getCurrentTimestamp() {
     auto now = chrono::system_clock::now();
@@ -42,18 +61,37 @@ string getCurrentTimestamp() {
     return ss.str();
 }
 
+
+/*!
+ * \brief Retrieves the current working directory.
+ * \return A string representing the current working directory.
+ *
+ * This function is useful for obtaining the directory path for file operations.
+ */
 string getCurrentPath() {
     char buffer[FILENAME_MAX];
     _getcwd(buffer, FILENAME_MAX);
     return string(buffer);
 }
 
+// Global variables to track the state of brightness and contrast adjustments
 bool showChangeBrightness = false;
 bool showChangeContrast = false;
 int brightness = 0;
 float contrast = 0.0;
+bool time_blur1_next_frame = false;
+bool time_blur2_next_frame = false;
 
-// Callback function for mouse events
+/*!
+ * \brief Callback function for handling mouse events.
+ * \param event The type of mouse event.
+ * \param x The x-coordinate of the mouse event.
+ * \param y The y-coordinate of the mouse event.
+ * \param flags Additional flags for the event.
+ * \param userdata Pointer to user data (unused).
+ *
+ * This function responds to mouse wheel movements to adjust brightness and contrast.
+ */
 void onMouse(int event, int x, int y, int flags, void* userdata) {
     if (event == cv::EVENT_MOUSEWHEEL) {
         if (flags > 0) { // Scroll up
@@ -77,40 +115,43 @@ void onMouse(int event, int x, int y, int flags, void* userdata) {
 }
 
 
-
-/*!
- *  \brief Main function for capturing and displaying video from a camera.
- *
- *  \param argc Count of command-line arguments.
- *  \param argv Array of command-line arguments.
- *  \return int Returns 0 on successful execution, -1 on failure.
- *
- *  The main function initializes a video capture device, creates a window,
- *  and continuously captures frames from the device. It displays each frame
- *  and allows the user to quit the loop with 'q' or save a frame with 's'.
- */
+ /*!
+  * \brief Main function for the video display application.
+  *
+  * This function captures live video from a camera, processes it based on user input,
+  * and displays the result. It allows toggling between various display modes like grayscale,
+  * sepia, blur, Sobel filters, etc., and handles keypresses for different functionalities.
+  *
+  * \param argc Argument count.
+  * \param argv Argument vector.
+  * \return int Returns 0 on successful execution, -1 on failure.
+  */
 int main(int argc, char* argv[]) {
     VideoCapture* capdev;
 
-    // Open the video device
+    // Initialize the video capture device
     capdev = new VideoCapture(0);
     if (!capdev->isOpened()) {
         cerr << "Unable to open video device" << endl;
         return -1;
     }
 
-    // Get some properties of the image
+    // Retrieve and display the frame dimensions
     Size refS((int)capdev->get(CAP_PROP_FRAME_WIDTH),
         (int)capdev->get(CAP_PROP_FRAME_HEIGHT));
     std::cout << "Expected size: " << refS.width << " " << refS.height << endl;
 
-    // Create a window
+    // Create a window for video capture
     namedWindow("Video Capture", 1);
-    Mat frame, gray, alternateGray, sepiaFil, BlurrFil;
+
+    // Variables for different modes and filters
+    Mat frame, gray, alternateGray, sepiaFil, sepiaVignettFill, Blurr1Fil, Blurr1Fil1, Blurr1Fil2, Blurr2Fil, Blurr2Fil1, Blurr2Fil2;
     bool showGray = false;
     bool showalternateGray = false;
     bool showsepia = false;
-    bool showblurr = false;
+    bool showsepiaVignett = false;
+    bool showblurr1 = false;
+    bool showblurr2 = false;
     bool showsobelX = false;
     bool showsobelY = false;
     Mat SobelY;
@@ -135,93 +176,121 @@ int main(int argc, char* argv[]) {
     Mat ColorFace;
     bool showHalo = false;
     Mat HaloFrame;
-    //bool showMedianFilter = false;
-    //Mat MedianFilterFrame;
     bool showRetainCertainColor = false;
     Mat RetainCertainColorFrame;
-    //bool showChangeBrightness = false;
     Mat ChangeBrightnessFrame;
-    //bool showChangeContrast = false;
     Mat ChangeContrastFrame;
     bool showCartooning = false;
     Mat CartooningFrame;
     bool showswapfaces = false;
     Mat swapFacesFrame;
 
-    // Set the mouse callback function to capture scroll events
+    // Set callback for mouse events
     cv::setMouseCallback("Video Capture", onMouse, nullptr);
 
+    // Main loop for capturing and processing frames
     while (true) {
-        *capdev >> frame; // Get a new frame from the camera
+        *capdev >> frame; // Capture a new frame
         if (frame.empty()) {
             cerr << "Frame is empty" << endl;
-            break;
+            break; // Exit the loop if no frame is captured
         }
 
+        // Process the frame based on the current mode
         if (showalternateGray) {
+            // Apply custom grayscale processing to the frame
             greyscale(frame, alternateGray);
             imshow("Video Capture", alternateGray);
         }
         else if (showsepia) {
+            // Apply sepia filter to the frame
             sepia(frame, sepiaFil);
             imshow("Video Capture", sepiaFil);
         }
-        else if (showblurr) {
-            blur5x5_2(frame, BlurrFil);
-            imshow("Video Capture", BlurrFil);
+        else if (showsepiaVignett) {
+            // Apply sepia filter with vignett to the frame
+            sepiawithvignett(frame, sepiaVignettFill);
+            imshow("Video Capture", sepiaVignettFill);
         }
-        else if (showblurr) {
-            blur5x5_2(frame, BlurrFil);
-            imshow("Video Capture", BlurrFil);
+        else if (showblurr1) {
+            if (time_blur1_next_frame)
+            {
+                auto start = std::chrono::high_resolution_clock::now();
+                blur5x5_1(frame, Blurr1Fil); // Perform the blur operation
+                blur5x5_1(Blurr1Fil, Blurr1Fil1);
+                blur5x5_1(Blurr1Fil1, Blurr1Fil2);
+                auto end = std::chrono::high_resolution_clock::now();
+                std::chrono::duration<double, std::milli> blur1_time = end - start;
+                std::cout << "Blur using Guassian Filter operation took " << blur1_time.count() / 3 << " milliseconds.\n";
+                imshow("Video Capture", Blurr1Fil);
+                time_blur1_next_frame = false; // Reset the flag
+            }
+            else
+            {
+                blur5x5_1(frame, Blurr1Fil); // Perform the blur operation
+                blur5x5_1(Blurr1Fil, Blurr1Fil1);
+                blur5x5_1(Blurr1Fil1, Blurr1Fil2);
+                imshow("Video Capture", Blurr1Fil2);
+            }
+        }
+        else if (showblurr2) {
+            if (time_blur2_next_frame)
+            {
+                auto start = std::chrono::high_resolution_clock::now();
+                blur5x5_2(frame, Blurr2Fil); // Perform the blur operation
+                blur5x5_2(Blurr2Fil, Blurr2Fil1);
+                blur5x5_2(Blurr2Fil1, Blurr2Fil2);
+                auto end = std::chrono::high_resolution_clock::now();
+                std::chrono::duration<double, std::milli> blur2_time = end - start;
+                std::cout << "Blur using Seperable Matrix operation took " << blur2_time.count() / 3 << " milliseconds.\n";
+                imshow("Video Capture", Blurr2Fil2);
+                time_blur2_next_frame = false;
+            }
+            else
+            {
+                blur5x5_2(frame, Blurr2Fil); // Perform the blur operation
+                blur5x5_2(Blurr2Fil, Blurr2Fil1);
+                blur5x5_2(Blurr2Fil1, Blurr2Fil2);
+                imshow("Video Capture", Blurr2Fil2);
+            }
         }
         else if (showsobelX) {
-            //Mat SobelX(frame.rows, frame.cols, CV_16SC3);
-            SobelX.create(frame.size(), CV_16SC3);
-            //SobelX.create(frame.size(), CV_8UC3);
-            
+            // Apply Sobel filter in X direction
+            SobelX.create(frame.size(), CV_16SC3);      
             sobelX3x3(frame, SobelX);
-            //imshow("Video Capture", SobelX);
             
-            convertScaleAbs(SobelX, grad_x);
+            convertScaleAbs(SobelX, grad_x); // Convert to absolute for display
             imshow("Video Capture", grad_x);
         }
         else if (showsobelY) {
-            //Mat SobelY(frame.rows, frame.cols, CV_16SC3);
-            SobelY.create(frame.size(), CV_16SC3);
-            //SobelY.create(frame.size(), CV_8UC3);
+            // Apply Sobel filter in Y direction
+            SobelY.create(frame.size(), CV_16SC3);                        
+            sobelY3x3(frame, SobelY);            
             
-            sobelY3x3(frame, SobelY);
-            //imshow("Video Capture", SobelY);
-
-            convertScaleAbs(SobelY, grad_y);
+            convertScaleAbs(SobelY, grad_y); // Convert to absolute for display
             imshow("Video Capture", grad_y);
         }
         else if (showmagnitude) {
+            // Calculate and display gradient magnitude using Sobel filters
             SobelX.create(frame.size(), CV_16SC3);
-            sobelX3x3(frame, SobelX);
-            //convertScaleAbs(SobelX, grad_x);
-
+            sobelX3x3(frame, SobelX);            
+           
             SobelY.create(frame.size(), CV_16SC3);
             sobelY3x3(frame, SobelY);
-            //convertScaleAbs(SobelY, grad_y);
-
-            SobelMagnitude.create(frame.size(), CV_8UC3);
-            //magnitude(grad_x, grad_y, SobelMagnitude);
+            
+            SobelMagnitude.create(frame.size(), CV_8UC3);            
             magnitude(SobelX, SobelY, SobelMagnitude);
-
+            
             convertScaleAbs(SobelMagnitude, grad_Magnitude);
-            imshow("Video Capture", grad_Magnitude);
-            //imshow("Video Capture", SobelMagnitude);
+            imshow("Video Capture", grad_Magnitude);            
         }
         else if (showquantizing) {
-
-            //Quantizing.create(frame.size(), CV_8UC3);
+            // Apply blur and quantize effect
             blurQuantize(frame, blurredQuantizedImage, 10);
             imshow("Video Capture", blurredQuantizedImage);
         }
         else if (showfaces) {
-
-            // convert the image to greyscale
+            // Detect and display faces with bounding boxes
             cv::cvtColor(frame, grey, cv::COLOR_BGR2GRAY, 0);
 
             // detect faces
@@ -241,7 +310,7 @@ int main(int argc, char* argv[]) {
             imshow("Video Capture", frame);
         }
         else if (showblurrfaces) {
-            // Convert the image to greyscale and detect faces
+            // Blur the background while keeping faces sharp
             cv::cvtColor(frame, grey, cv::COLOR_BGR2GRAY, 0);
             detectFaces(grey, faces);
 
@@ -256,105 +325,95 @@ int main(int argc, char* argv[]) {
                 frame(face).copyTo(frameWithSharpFaces(face));
             }
 
-            // display the frame with the sharp faces and blurred background
+            // Display the frame with the sharp faces and blurred background
             cv::imshow("Video Capture", frameWithSharpFaces);
         }
         else if (showembossing) {
+            // Applying embossing effect            
             SobelX.create(frame.size(), CV_16SC3);
-            sobelX3x3(frame, SobelX);
+            sobelX3x3(frame, SobelX); // Apply Sobel filter in X direction
             convertScaleAbs(SobelX, grad_x);
 
             SobelY.create(frame.size(), CV_16SC3);
-            sobelY3x3(frame, SobelY);
+            sobelY3x3(frame, SobelY); // Apply Sobel filter in Y direction
             convertScaleAbs(SobelY, grad_y);
 
             embossing.create(frame.size(), CV_8UC3);
-            createEmbossEffect(grad_x, grad_y, embossing);
+            createEmbossEffect(grad_x, grad_y, embossing); // Create emboss effect
             imshow("Video Capture", embossing);
         }
         else if (showcolorFace) {
-            // convert the image to greyscale
+            // Coloring detected faces while keeping the background grayscale
             cvtColor(frame, grey, cv::COLOR_BGR2GRAY, 0);
 
-            // detect faces
-            detectFaces(grey, faces);
+            detectFaces(grey, faces); // Detect faces in the grayscale image
 
             ColorFace.create(frame.size(), CV_8UC3);
-            colorFacesOnGray(frame, ColorFace, faces);
+            colorFacesOnGray(frame, ColorFace, faces); // Apply color to detected faces
             imshow("Video Capture", ColorFace);
         }
         else if (showHalo) {
-            // convert the image to greyscale
-            cvtColor(frame, grey, cv::COLOR_BGR2GRAY, 0);
-
-            // detect faces
-            detectFaces(grey, faces);
-
-            //embossing.create(frame.size(), CV_8UC3);
-            addSparkleHalo(frame, faces);
-            imshow("Video Capture", frame);
+            // Adding halo effect around detected faces
+            cvtColor(frame, grey, cv::COLOR_BGR2GRAY, 0); // Convert frame to grayscale
+            detectFaces(grey, faces); // Detect faces in the grayscale image
+            addSparkleHalo(frame, faces); // Add halo effect around detected faces
+            imshow("Video Capture", frame); // Display the resulting image
         }
-        /*else if (showMedianFilter) {
-            medianFilterPtrColor(frame, MedianFilterFrame, 3);
-            imshow("Video Capture", MedianFilterFrame);
-        }*/
         else if (showRetainCertainColor) {
-            Scalar targetColor(76, 34, 135);
+            // Retain a specific color in the frame, making the rest grayscale
+            //Scalar targetColor(28, 36, 36);
+            Scalar targetColor(18, 17, 74);
             colorPreserveGray(frame, RetainCertainColorFrame, targetColor, 50);
             imshow("Video Capture", RetainCertainColorFrame);
         }
         else if (showChangeBrightness) {
-            
+            // Adjust the brightness of the frame
             adjustBrightness(frame, ChangeBrightnessFrame, brightness);
             imshow("Video Capture", ChangeBrightnessFrame);
         }
         else if (showChangeContrast) {
-
+            // Adjust the contrast of the frame
             adjustContrast(frame, ChangeContrastFrame, contrast);
             imshow("Video Capture", ChangeContrastFrame);
         }
         else if (showCartooning) {
-
+            // Apply cartooning effect to the frame
             cartoonify(frame, CartooningFrame);
             imshow("Video Capture", CartooningFrame);
         }
         else if (showswapfaces) {
-            // convert the image to greyscale
-            cvtColor(frame, grey, cv::COLOR_BGR2GRAY, 0);
-
-            // detect faces
-            detectFaces(grey, faces);
+            // Swap faces detected in the frame            
+            cvtColor(frame, grey, cv::COLOR_BGR2GRAY, 0); // Convert frame to grayscale
+      
+            detectFaces(grey, faces); // Detect faces in the grayscale image
 
             //swapFacesFrame.create(frame.size(), CV_8UC3);
-            swapFaces(frame, swapFacesFrame, faces);
-            imshow("Video Capture", swapFacesFrame);
+            swapFaces(frame, swapFacesFrame, faces); // Swap detected faces
+            imshow("Video Capture", swapFacesFrame); // Display the image with swapped faces
         }
         else if (showGray) {
-            /*
-            This function converts an image from one color space to another. In this case, you'll convert the captured frame from BGR to greyscale.
-             The conversion weights for each color channel (in BGR to grayscale conversion) are based on the perception of colors by the human eye.
-             The OpenCV function cvtColor with COLOR_BGR2GRAY uses the following formula: Y = 0.299 * R + 0.587 * G + 0.114 * B
-             Here, Y is the luminance component, and R, G, and B are the red, green, and blue color components of the image, respectively. 
-             This formula reflects the fact that human eyes are more sensitive to green light, hence the higher weight for the green component.
-             */
+            // Convert the frame to grayscale and display it
             cvtColor(frame, gray, COLOR_BGR2GRAY);
             imshow("Video Capture", gray);
         }
         else {
+            // Default display of the captured frame
             imshow("Video Capture", frame);
         }
 
-        // Check for a waiting keystroke
+        // Handling keystrokes for toggling modes
         char key = (char)waitKey(10);
+        
         switch (key) {
-        case 'q':    // quit
+        case 'q':    // Quit the program
             return 0;
-        case 'g':    // go into grayscale
+        case 'g':    // Toggle grayscale mode
         {
             showGray = !showGray;
-            showalternateGray = false;   // doesn't matter if previously alternate gray mode was enabled or not, disable alternate gray mode if gray mode is enabled
-            showsepia = false;
-            showblurr = false;
+            // Reset other modes to ensure only grayscale mode is active
+            showalternateGray = false;
+            showsepia = false; showsepiaVignett = false;
+            showblurr1 = false; showblurr2 = false;
             showsobelY = false;
             showsobelX = false;
             showmagnitude = false;
@@ -363,8 +422,7 @@ int main(int argc, char* argv[]) {
             showblurrfaces = false;
             showembossing = false;
             showcolorFace = false;
-            showHalo = false;
-            //showMedianFilter = false;
+            showHalo = false;            
             showRetainCertainColor = false;
             showChangeContrast = false;
             showChangeBrightness = false;
@@ -372,12 +430,15 @@ int main(int argc, char* argv[]) {
             showswapfaces = false;
             break;
         }
-        case 'h':    // alternative gray custom version
+        case 'h':    // Toggle alternative grayscale mode
         {
             showalternateGray = !showalternateGray;
-            showGray = false;           // doesn't matter if previously gray mode was enabled or not, disable gray mode if alternate gray mode is enabled
-            showsepia = false;
-            showblurr = false;
+            // Ensuring that no other modes are active
+            showGray = false;
+            showsepia = false; 
+            showsepiaVignett = false;
+            showblurr1 = false; 
+            showblurr2 = false;
             showsobelY = false;
             showsobelX = false;
             showmagnitude = false;
@@ -386,8 +447,7 @@ int main(int argc, char* argv[]) {
             showblurrfaces = false;
             showembossing = false;
             showcolorFace = false;
-            showHalo = false;
-            //showMedianFilter = false;
+            showHalo = false;            
             showRetainCertainColor = false;
             showChangeContrast = false;
             showChangeBrightness = false;
@@ -395,12 +455,14 @@ int main(int argc, char* argv[]) {
             showswapfaces = false;
             break;
         }
-        case 'p':    // sepia filter applied
+        case 'p':    // Toggle sepia filter mode
         {
             showsepia = !showsepia;
-            showGray = false;           // doesn't matter if previously gray mode was enabled or not, disable gray mode if alternate gray mode is enabled
-            showalternateGray = false;           // doesn't matter if previously gray mode was enabled or not, disable gray mode if alternate gray mode is enabled
-            showblurr = false;
+            // Ensuring that no other modes are active
+            showsepiaVignett = false;
+            showGray = false;           
+            showalternateGray = false;  
+            showblurr1 = false; showblurr2 = false;
             showsobelY = false;
             showsobelX = false;
             showmagnitude = false;
@@ -418,10 +480,40 @@ int main(int argc, char* argv[]) {
             showswapfaces = false;
             break;
         }
-        case 'b':    // go into blurr mode
+        case 'v':    // Toggle sepia filter with vignett mode
         {
-            showblurr = !showblurr;
-            showalternateGray = false;   // doesn't matter if previously alternate gray mode was enabled or not, disable alternate gray mode if gray mode is enabled
+            showsepiaVignett = !showsepiaVignett;
+            // Ensuring that no other modes are active
+            showsepia = false;
+            showGray = false;
+            showalternateGray = false;
+            showblurr1 = false; showblurr2 = false;
+            showsobelY = false;
+            showsobelX = false;
+            showmagnitude = false;
+            showquantizing = false;
+            showfaces = false;
+            showblurrfaces = false;
+            showembossing = false;
+            showcolorFace = false;
+            showHalo = false;
+            //showMedianFilter = false;
+            showRetainCertainColor = false;
+            showChangeContrast = false;
+            showChangeBrightness = false;
+            showCartooning = false;
+            showswapfaces = false;
+            break;
+        }
+        case 'z':    // Toggle blur 1 mode
+        {
+            showblurr1 = !showblurr1;
+            if (showblurr1) {
+                time_blur1_next_frame = true; // Set the flag to time next frame
+            }
+            // Ensuring that no other modes are active
+            showblurr2 = false;
+            showalternateGray = false;
             showsepia = false;
             showGray = false;
             showsobelY = false;
@@ -433,7 +525,6 @@ int main(int argc, char* argv[]) {
             showembossing = false;
             showcolorFace = false;
             showHalo = false;
-            //showMedianFilter = false;
             showRetainCertainColor = false;
             showChangeContrast = false;
             showChangeBrightness = false;
@@ -441,13 +532,41 @@ int main(int argc, char* argv[]) {
             showswapfaces = false;
             break;
         }
-        case 'x':    // go into sobelX mode
+        case 'b':    // Toggle blur 2 mode
+        {
+            showblurr2 = !showblurr2;
+            if (showblurr2) {
+                time_blur2_next_frame = true; // Set the flag to time next frame
+            }
+            // Ensuring that no other modes are active
+            showblurr1 = false;
+            showalternateGray = false;
+            showsepia = false; showsepiaVignett = false;
+            showGray = false;
+            showsobelY = false;
+            showsobelX = false;
+            showmagnitude = false;
+            showquantizing = false;
+            showfaces = false;
+            showblurrfaces = false;
+            showembossing = false;
+            showcolorFace = false;
+            showHalo = false;            
+            showRetainCertainColor = false;
+            showChangeContrast = false;
+            showChangeBrightness = false;
+            showCartooning = false;
+            showswapfaces = false;
+            break;
+        }
+        case 'x':    // Toggle Sobel filter in X direction
         {
             showsobelX = !showsobelX;
-            showalternateGray = false;   // doesn't matter if previously alternate gray mode was enabled or not, disable alternate gray mode if gray mode is enabled
-            showsepia = false;
+            // Ensuring that no other modes are active
+            showalternateGray = false;
+            showsepia = false; showsepiaVignett = false;
             showGray = false;
-            showblurr = false;
+            showblurr1 = false; showblurr2 = false;
             showsobelY = false;
             showmagnitude = false;
             showquantizing = false;
@@ -455,8 +574,7 @@ int main(int argc, char* argv[]) {
             showblurrfaces = false;
             showembossing = false;
             showcolorFace = false;
-            showHalo = false;
-            //showMedianFilter = false;
+            showHalo = false;            
             showRetainCertainColor = false;
             showChangeContrast = false;
             showChangeBrightness = false;
@@ -464,13 +582,14 @@ int main(int argc, char* argv[]) {
             showswapfaces = false;
             break;
         }
-        case 'y':    // go into sobelY mode
+        case 'y':    // Toggle Sobel filter in Y direction     
         {
             showsobelY = !showsobelY;
+            // Ensuring that no other modes are active
             showalternateGray = false;
-            showsepia = false;
+            showsepia = false; showsepiaVignett = false;
             showGray = false;
-            showblurr = false;
+            showblurr1 = false; showblurr2 = false;
             showsobelX = false;
             showmagnitude = false;
             showquantizing = false;
@@ -478,8 +597,7 @@ int main(int argc, char* argv[]) {
             showblurrfaces = false;
             showembossing = false;
             showcolorFace = false;
-            showHalo = false;
-            //showMedianFilter = false;
+            showHalo = false;            
             showRetainCertainColor = false;
             showChangeContrast = false;
             showChangeBrightness = false;
@@ -487,13 +605,14 @@ int main(int argc, char* argv[]) {
             showswapfaces = false;
             break;
         }
-        case 'm':    // go into sobel magnitude mode
+        case 'm':    // Toggle gradient magnitude mode (Sobel)
         {
             showmagnitude = !showmagnitude;
+            // Ensuring that no other modes are active
             showalternateGray = false;
-            showsepia = false;
+            showsepia = false; showsepiaVignett = false;
             showGray = false;
-            showblurr = false;
+            showblurr1 = false; showblurr2 = false;
             showsobelX = false;
             showsobelY = false;
             showquantizing = false;
@@ -501,8 +620,7 @@ int main(int argc, char* argv[]) {
             showblurrfaces = false;
             showembossing = false;
             showcolorFace = false;
-            showHalo = false;
-            //showMedianFilter = false;
+            showHalo = false;            
             showRetainCertainColor = false;
             showChangeContrast = false;
             showChangeBrightness = false;
@@ -510,13 +628,14 @@ int main(int argc, char* argv[]) {
             showswapfaces = false;
             break;
         }
-        case 'i':    // go into blurr and quantizing mode
+        case 'i':    // Toggle blur and quantizing mode
         {
             showquantizing = !showquantizing;
+            // Ensuring that no other modes are active
             showalternateGray = false;
-            showsepia = false;
+            showsepia = false; showsepiaVignett = false;
             showGray = false;
-            showblurr = false;
+            showblurr1 = false; showblurr2 = false;
             showsobelX = false;
             showsobelY = false;
             showmagnitude = false;
@@ -524,8 +643,7 @@ int main(int argc, char* argv[]) {
             showblurrfaces = false;
             showembossing = false;
             showcolorFace = false;
-            showHalo = false;
-            //showMedianFilter = false;
+            showHalo = false;            
             showRetainCertainColor = false;
             showChangeContrast = false;
             showChangeBrightness = false;
@@ -533,13 +651,14 @@ int main(int argc, char* argv[]) {
             showswapfaces = false;
             break;
         }
-        case 'f':    // go into face detect mode
+        case 'f':    // Toggle face detection mode
         {
             showfaces = !showfaces;
+            // Ensuring that no other modes are active
             showalternateGray = false;
-            showsepia = false;
+            showsepia = false; showsepiaVignett = false;
             showGray = false;
-            showblurr = false;
+            showblurr1 = false; showblurr2 = false;
             showsobelX = false;
             showsobelY = false;
             showmagnitude = false;
@@ -547,8 +666,7 @@ int main(int argc, char* argv[]) {
             showblurrfaces = false;
             showembossing = false;
             showcolorFace = false;
-            showHalo = false;
-            //showMedianFilter = false;
+            showHalo = false;            
             showRetainCertainColor = false;
             showChangeContrast = false;
             showChangeBrightness = false;
@@ -556,13 +674,14 @@ int main(int argc, char* argv[]) {
             showswapfaces = false;
             break;
         }
-        case 'r':    // go to blurr face around the rectangle mode
+        case 'r':    //Toggle blurred faces mode
         {
             showblurrfaces = !showblurrfaces;
+            // Ensuring that no other modes are active
             showalternateGray = false;
-            showsepia = false;
+            showsepia = false; showsepiaVignett = false;
             showGray = false;
-            showblurr = false;
+            showblurr1 = false; showblurr2 = false;
             showsobelX = false;
             showsobelY = false;
             showmagnitude = false;
@@ -570,8 +689,7 @@ int main(int argc, char* argv[]) {
             showfaces = false;
             showembossing = false;
             showcolorFace = false;
-            showHalo = false;
-            //showMedianFilter = false;
+            showHalo = false;            
             showRetainCertainColor = false;
             showChangeContrast = false;
             showChangeBrightness = false;
@@ -579,13 +697,14 @@ int main(int argc, char* argv[]) {
             showswapfaces = false;
             break;
         }
-        case 't':    // go to embossing mode
+        case 't':    // Toggle embossing mode
         {
             showembossing = !showembossing;
+            // Ensuring that no other modes are active
             showalternateGray = false;
-            showsepia = false;
+            showsepia = false; showsepiaVignett = false;
             showGray = false;
-            showblurr = false;
+            showblurr1 = false; showblurr2 = false;
             showsobelX = false;
             showsobelY = false;
             showmagnitude = false;
@@ -593,8 +712,7 @@ int main(int argc, char* argv[]) {
             showfaces = false;
             showblurrfaces = false;
             showcolorFace = false;
-            showHalo = false;
-            //showMedianFilter = false;
+            showHalo = false;            
             showRetainCertainColor = false;
             showChangeContrast = false;
             showChangeBrightness = false;
@@ -602,13 +720,14 @@ int main(int argc, char* argv[]) {
             showswapfaces = false;
             break;
         }
-        case 'c':    // go to color face mode
+        case 'c':    // Toggle color face mode
         {
             showcolorFace = !showcolorFace;
+            // Ensuring that no other modes are active
             showalternateGray = false;
-            showsepia = false;
+            showsepia = false; showsepiaVignett = false;
             showGray = false;
-            showblurr = false;
+            showblurr1 = false; showblurr2 = false;
             showsobelX = false;
             showsobelY = false;
             showmagnitude = false;
@@ -616,8 +735,7 @@ int main(int argc, char* argv[]) {
             showfaces = false;
             showblurrfaces = false;
             showembossing = false;
-            showHalo = false;
-            //showMedianFilter = false;
+            showHalo = false;            
             showRetainCertainColor = false;
             showChangeContrast = false;
             showChangeBrightness = false;
@@ -625,13 +743,14 @@ int main(int argc, char* argv[]) {
             showswapfaces = false;
             break;
         }
-        case 'u':    // go to halo effect mode
+        case 'u':    // Toggle halo effect mode
         {
             showHalo = !showHalo;
+            // Ensuring that no other modes are active
             showalternateGray = false;
-            showsepia = false;
+            showsepia = false; showsepiaVignett = false;
             showGray = false;
-            showblurr = false;
+            showblurr1 = false; showblurr2 = false;
             showsobelX = false;
             showsobelY = false;
             showmagnitude = false;
@@ -639,8 +758,7 @@ int main(int argc, char* argv[]) {
             showfaces = false;
             showblurrfaces = false;
             showembossing = false;
-            showcolorFace = false;
-            //showMedianFilter = false;
+            showcolorFace = false;            
             showRetainCertainColor = false;
             showChangeContrast = false;
             showChangeBrightness = false;
@@ -648,34 +766,14 @@ int main(int argc, char* argv[]) {
             showswapfaces = false;
             break;
         }
-        //case 'o':    // go to median filtering mode based on different kernel size
-        //{
-        //    showMedianFilter = !showMedianFilter;
-        //    showalternateGray = false;
-        //    showsepia = false;
-        //    showGray = false;
-        //    showblurr = false;
-        //    showsobelX = false;
-        //    showsobelY = false;
-        //    showmagnitude = false;
-        //    showquantizing = false;
-        //    showfaces = false;
-        //    showblurrfaces = false;
-        //    showembossing = false;
-        //    showcolorFace = false;
-        //    showHalo = false;
-        //    showRetainCertainColor = false;
-        //    showChangeContrast = false;
-        //    showChangeBrightness = false;
-        //    break;
-        //}
-        case 'a':    // go to retain certain color mode
+        case 'a':    // Toggle retain certain color mode
         {
             showRetainCertainColor = !showRetainCertainColor;
+            // Ensuring that no other modes are active
             showalternateGray = false;
-            showsepia = false;
+            showsepia = false; showsepiaVignett = false;
             showGray = false;
-            showblurr = false;
+            showblurr1 = false; showblurr2 = false;
             showsobelX = false;
             showsobelY = false;
             showmagnitude = false;
@@ -684,21 +782,21 @@ int main(int argc, char* argv[]) {
             showblurrfaces = false;
             showembossing = false;
             showcolorFace = false;
-            showHalo = false;
-            //showMedianFilter = false;
+            showHalo = false;            
             showChangeContrast = false;
             showChangeBrightness = false;
             showCartooning = false;
             showswapfaces = false;
             break;
         }
-        case 'd':    // go to change brightness mode
+        case 'd':    // Toggle brightness change mode
         {
             showChangeBrightness = !showChangeBrightness;
+            // Ensuring that no other modes are active
             showalternateGray = false;
-            showsepia = false;
+            showsepia = false; showsepiaVignett = false;
             showGray = false;
-            showblurr = false;
+            showblurr1 = false; showblurr2 = false;
             showsobelX = false;
             showsobelY = false;
             showmagnitude = false;
@@ -707,21 +805,21 @@ int main(int argc, char* argv[]) {
             showblurrfaces = false;
             showembossing = false;
             showcolorFace = false;
-            showHalo = false;
-            //showMedianFilter = false;
+            showHalo = false;            
             showRetainCertainColor = false;
             showChangeContrast = false;
             showCartooning = false;
             showswapfaces = false;
             break;
         }
-        case 'e':    // go to change contrast mode
+        case 'e':    // Toggle contrast change mode
         {
             showChangeContrast = !showChangeContrast;
+            // Ensuring that no other modes are active
             showalternateGray = false;
-            showsepia = false;
+            showsepia = false; showsepiaVignett = false;
             showGray = false;
-            showblurr = false;
+            showblurr1 = false; showblurr2 = false;
             showsobelX = false;
             showsobelY = false;
             showmagnitude = false;
@@ -730,21 +828,21 @@ int main(int argc, char* argv[]) {
             showblurrfaces = false;
             showembossing = false;
             showcolorFace = false;
-            showHalo = false;
-            //showMedianFilter = false;
+            showHalo = false;            
             showRetainCertainColor = false;
             showChangeBrightness = false;
             showCartooning = false;
             showswapfaces = false;
             break;
         }
-        case 'j':    // go to cartooning mode
+        case 'j':    // Toggle cartooning mode
         {
             showCartooning = !showCartooning;
+            // Ensuring that no other modes are active
             showalternateGray = false;
-            showsepia = false;
+            showsepia = false; showsepiaVignett = false;
             showGray = false;
-            showblurr = false;
+            showblurr1 = false; showblurr2 = false;
             showsobelX = false;
             showsobelY = false;
             showmagnitude = false;
@@ -753,21 +851,21 @@ int main(int argc, char* argv[]) {
             showblurrfaces = false;
             showembossing = false;
             showcolorFace = false;
-            showHalo = false;
-            //showMedianFilter = false;
+            showHalo = false;            
             showRetainCertainColor = false;
             showChangeBrightness = false;
             showChangeContrast = false;
             showswapfaces = false;
             break;
         }
-        case 'k':    // go to swap faces mode
+        case 'k':    // Toggle swap faces mode
         {
             showswapfaces = !showswapfaces;
+            // Ensuring that no other modes are active
             showalternateGray = false;
-            showsepia = false;
+            showsepia = false; showsepiaVignett = false;
             showGray = false;
-            showblurr = false;
+            showblurr1 = false; showblurr2 = false;
             showsobelX = false;
             showsobelY = false;
             showmagnitude = false;
@@ -776,15 +874,14 @@ int main(int argc, char* argv[]) {
             showblurrfaces = false;
             showembossing = false;
             showcolorFace = false;
-            showHalo = false;
-            //showMedianFilter = false;
+            showHalo = false;          
             showRetainCertainColor = false;
             showChangeBrightness = false;
             showChangeContrast = false;
             showCartooning = false;
             break;
         }
-        case 's':     // save the screen capture
+        case 's':     // Save the current frame with applied effect
         {
             string timestamp = getCurrentTimestamp();
             string filename;
@@ -800,9 +897,17 @@ int main(int argc, char* argv[]) {
                 filename = "saved_frame_sepia_" + timestamp + ".jpg";
                 imwrite(filename, sepiaFil);
             }
-            else if (showblurr) {
-                filename = "saved_frame_blurr_" + timestamp + ".jpg";
-                imwrite(filename, BlurrFil);
+            else if (showsepiaVignett) {
+                filename = "saved_frame_sepia_vignett_" + timestamp + ".jpg";
+                imwrite(filename, sepiaFil);
+            }
+            else if (showblurr1) {
+                filename = "saved_frame_blurr1_" + timestamp + ".jpg";
+                imwrite(filename, Blurr1Fil);
+            }
+            else if (showblurr2) {
+                filename = "saved_frame_blurr2_" + timestamp + ".jpg";
+                imwrite(filename, Blurr2Fil);
             }
             else if (showsobelX) {
                 filename = "saved_frame_sobelX_" + timestamp + ".jpg";
@@ -840,10 +945,6 @@ int main(int argc, char* argv[]) {
                 filename = "saved_frame_Haloreffect_" + timestamp + ".jpg";
                 imwrite(filename, frame);
             }
-            /*else if (showMedianFilter) {
-                filename = "saved_frame_MedianFilteringEffect_" + timestamp + ".jpg";
-                imwrite(filename, MedianFilterFrame);
-            }*/
             else if (showRetainCertainColor) {
                 filename = "saved_frame_RetainColor_" + timestamp + ".jpg";
                 imwrite(filename, RetainCertainColorFrame);
@@ -873,10 +974,11 @@ int main(int argc, char* argv[]) {
             break;
         }
 
-        // no default since we want it to keep looping and waiting for key strokes
+        // Default case is intentionally omitted to allow continuous processing
         }
     }
 
+    // Clean up and release resources
     delete capdev;
     return 0;
 }

@@ -21,7 +21,7 @@
     <ClCompile Include="imgDisplay.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="filter.cpp">
+    <ClCompile Include="filters.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Guassian.cpp">
@@ -38,7 +38,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="filter.hpp">
+    <ClInclude Include="filters.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="faceDetect\faceDetect.h">

@@ -312,7 +312,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Gaussian|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='VidDisplay|x64'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="filter.cpp">
+    <ClCompile Include="filters.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ImgDisplay|x64'">false</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="fourier.cpp">
@@ -339,7 +339,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Gaussian|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ImgDisplay|x64'">true</ExcludedFromBuild>
     </ClInclude>
-    <ClInclude Include="filter.hpp" />
+    <ClInclude Include="filters.hpp" />
   </ItemGroup>
   <ItemGroup>
     <Xml Include="faceDetect\haarcascade_frontalface_alt2.xml">

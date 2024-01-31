@@ -13,7 +13,7 @@
 #include <opencv2/opencv.hpp>
 #include <iostream>
 
-#include "filter.hpp" 
+#include "filters.hpp" 
 
 using namespace cv;
 using namespace std;

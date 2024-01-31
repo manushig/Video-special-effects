@@ -109,23 +109,23 @@ void onMouse(int event, int x, int y, int flags, void* userdata) {
             else if (showChangeContrast) {
                 contrast -= 10.0;  // Decrease Contrast
             }
-
+            
         }
     }
 }
 
 
-/*!
- * \brief Main function for the video display application.
- *
- * This function captures live video from a camera, processes it based on user input,
- * and displays the result. It allows toggling between various display modes like grayscale,
- * sepia, blur, Sobel filters, etc., and handles keypresses for different functionalities.
- *
- * \param argc Argument count.
- * \param argv Argument vector.
- * \return int Returns 0 on successful execution, -1 on failure.
- */
+ /*!
+  * \brief Main function for the video display application.
+  *
+  * This function captures live video from a camera, processes it based on user input,
+  * and displays the result. It allows toggling between various display modes like grayscale,
+  * sepia, blur, Sobel filters, etc., and handles keypresses for different functionalities.
+  *
+  * \param argc Argument count.
+  * \param argv Argument vector.
+  * \return int Returns 0 on successful execution, -1 on failure.
+  */
 int main(int argc, char* argv[]) {
     VideoCapture* capdev;
 
@@ -256,33 +256,33 @@ int main(int argc, char* argv[]) {
         }
         else if (showsobelX) {
             // Apply Sobel filter in X direction
-            SobelX.create(frame.size(), CV_16SC3);
+            SobelX.create(frame.size(), CV_16SC3);      
             sobelX3x3(frame, SobelX);
-
+            
             convertScaleAbs(SobelX, grad_x); // Convert to absolute for display
             imshow("Video Capture", grad_x);
         }
         else if (showsobelY) {
             // Apply Sobel filter in Y direction
-            SobelY.create(frame.size(), CV_16SC3);
-            sobelY3x3(frame, SobelY);
-
+            SobelY.create(frame.size(), CV_16SC3);                        
+            sobelY3x3(frame, SobelY);            
+            
             convertScaleAbs(SobelY, grad_y); // Convert to absolute for display
             imshow("Video Capture", grad_y);
         }
         else if (showmagnitude) {
             // Calculate and display gradient magnitude using Sobel filters
             SobelX.create(frame.size(), CV_16SC3);
-            sobelX3x3(frame, SobelX);
-
+            sobelX3x3(frame, SobelX);            
+           
             SobelY.create(frame.size(), CV_16SC3);
             sobelY3x3(frame, SobelY);
-
-            SobelMagnitude.create(frame.size(), CV_8UC3);
+            
+            SobelMagnitude.create(frame.size(), CV_8UC3);            
             magnitude(SobelX, SobelY, SobelMagnitude);
-
+            
             convertScaleAbs(SobelMagnitude, grad_Magnitude);
-            imshow("Video Capture", grad_Magnitude);
+            imshow("Video Capture", grad_Magnitude);            
         }
         else if (showquantizing) {
             // Apply blur and quantize effect
@@ -384,7 +384,7 @@ int main(int argc, char* argv[]) {
         else if (showswapfaces) {
             // Swap faces detected in the frame            
             cvtColor(frame, grey, cv::COLOR_BGR2GRAY, 0); // Convert frame to grayscale
-
+      
             detectFaces(grey, faces); // Detect faces in the grayscale image
 
             //swapFacesFrame.create(frame.size(), CV_8UC3);
@@ -403,7 +403,7 @@ int main(int argc, char* argv[]) {
 
         // Handling keystrokes for toggling modes
         char key = (char)waitKey(10);
-
+        
         switch (key) {
         case 'q':    // Quit the program
             return 0;
@@ -422,7 +422,7 @@ int main(int argc, char* argv[]) {
             showblurrfaces = false;
             showembossing = false;
             showcolorFace = false;
-            showHalo = false;
+            showHalo = false;            
             showRetainCertainColor = false;
             showChangeContrast = false;
             showChangeBrightness = false;
@@ -435,9 +435,9 @@ int main(int argc, char* argv[]) {
             showalternateGray = !showalternateGray;
             // Ensuring that no other modes are active
             showGray = false;
-            showsepia = false;
+            showsepia = false; 
             showsepiaVignett = false;
-            showblurr1 = false;
+            showblurr1 = false; 
             showblurr2 = false;
             showsobelY = false;
             showsobelX = false;
@@ -447,7 +447,7 @@ int main(int argc, char* argv[]) {
             showblurrfaces = false;
             showembossing = false;
             showcolorFace = false;
-            showHalo = false;
+            showHalo = false;            
             showRetainCertainColor = false;
             showChangeContrast = false;
             showChangeBrightness = false;
@@ -460,8 +460,8 @@ int main(int argc, char* argv[]) {
             showsepia = !showsepia;
             // Ensuring that no other modes are active
             showsepiaVignett = false;
-            showGray = false;
-            showalternateGray = false;
+            showGray = false;           
+            showalternateGray = false;  
             showblurr1 = false; showblurr2 = false;
             showsobelY = false;
             showsobelX = false;
@@ -551,7 +551,7 @@ int main(int argc, char* argv[]) {
             showblurrfaces = false;
             showembossing = false;
             showcolorFace = false;
-            showHalo = false;
+            showHalo = false;            
             showRetainCertainColor = false;
             showChangeContrast = false;
             showChangeBrightness = false;
@@ -574,7 +574,7 @@ int main(int argc, char* argv[]) {
             showblurrfaces = false;
             showembossing = false;
             showcolorFace = false;
-            showHalo = false;
+            showHalo = false;            
             showRetainCertainColor = false;
             showChangeContrast = false;
             showChangeBrightness = false;
@@ -597,7 +597,7 @@ int main(int argc, char* argv[]) {
             showblurrfaces = false;
             showembossing = false;
             showcolorFace = false;
-            showHalo = false;
+            showHalo = false;            
             showRetainCertainColor = false;
             showChangeContrast = false;
             showChangeBrightness = false;
@@ -620,7 +620,7 @@ int main(int argc, char* argv[]) {
             showblurrfaces = false;
             showembossing = false;
             showcolorFace = false;
-            showHalo = false;
+            showHalo = false;            
             showRetainCertainColor = false;
             showChangeContrast = false;
             showChangeBrightness = false;
@@ -643,7 +643,7 @@ int main(int argc, char* argv[]) {
             showblurrfaces = false;
             showembossing = false;
             showcolorFace = false;
-            showHalo = false;
+            showHalo = false;            
             showRetainCertainColor = false;
             showChangeContrast = false;
             showChangeBrightness = false;
@@ -666,7 +666,7 @@ int main(int argc, char* argv[]) {
             showblurrfaces = false;
             showembossing = false;
             showcolorFace = false;
-            showHalo = false;
+            showHalo = false;            
             showRetainCertainColor = false;
             showChangeContrast = false;
             showChangeBrightness = false;
@@ -689,7 +689,7 @@ int main(int argc, char* argv[]) {
             showfaces = false;
             showembossing = false;
             showcolorFace = false;
-            showHalo = false;
+            showHalo = false;            
             showRetainCertainColor = false;
             showChangeContrast = false;
             showChangeBrightness = false;
@@ -712,7 +712,7 @@ int main(int argc, char* argv[]) {
             showfaces = false;
             showblurrfaces = false;
             showcolorFace = false;
-            showHalo = false;
+            showHalo = false;            
             showRetainCertainColor = false;
             showChangeContrast = false;
             showChangeBrightness = false;
@@ -735,7 +735,7 @@ int main(int argc, char* argv[]) {
             showfaces = false;
             showblurrfaces = false;
             showembossing = false;
-            showHalo = false;
+            showHalo = false;            
             showRetainCertainColor = false;
             showChangeContrast = false;
             showChangeBrightness = false;
@@ -758,7 +758,7 @@ int main(int argc, char* argv[]) {
             showfaces = false;
             showblurrfaces = false;
             showembossing = false;
-            showcolorFace = false;
+            showcolorFace = false;            
             showRetainCertainColor = false;
             showChangeContrast = false;
             showChangeBrightness = false;
@@ -782,7 +782,7 @@ int main(int argc, char* argv[]) {
             showblurrfaces = false;
             showembossing = false;
             showcolorFace = false;
-            showHalo = false;
+            showHalo = false;            
             showChangeContrast = false;
             showChangeBrightness = false;
             showCartooning = false;
@@ -805,7 +805,7 @@ int main(int argc, char* argv[]) {
             showblurrfaces = false;
             showembossing = false;
             showcolorFace = false;
-            showHalo = false;
+            showHalo = false;            
             showRetainCertainColor = false;
             showChangeContrast = false;
             showCartooning = false;
@@ -828,7 +828,7 @@ int main(int argc, char* argv[]) {
             showblurrfaces = false;
             showembossing = false;
             showcolorFace = false;
-            showHalo = false;
+            showHalo = false;            
             showRetainCertainColor = false;
             showChangeBrightness = false;
             showCartooning = false;
@@ -851,7 +851,7 @@ int main(int argc, char* argv[]) {
             showblurrfaces = false;
             showembossing = false;
             showcolorFace = false;
-            showHalo = false;
+            showHalo = false;            
             showRetainCertainColor = false;
             showChangeBrightness = false;
             showChangeContrast = false;
@@ -874,7 +874,7 @@ int main(int argc, char* argv[]) {
             showblurrfaces = false;
             showembossing = false;
             showcolorFace = false;
-            showHalo = false;
+            showHalo = false;          
             showRetainCertainColor = false;
             showChangeBrightness = false;
             showChangeContrast = false;

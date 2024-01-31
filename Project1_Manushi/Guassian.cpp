@@ -18,7 +18,7 @@
 #include <chrono>
 #include <sys/utime.h>
 
-#include <filter.hpp>
+#include <filters.hpp>
 
 // argc is # of command line parameters (including program name), argv is the array of strings
 // This executable is expecting the name of an image on the command line.
